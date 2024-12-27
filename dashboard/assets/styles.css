@@ -1,0 +1,82 @@
+/* General layout */
+.main-layout {
+    display: flex;
+    flex-direction: row; /* Sidebar on the left, content on the right */
+    height: calc(100vh - 50px); /* Subtract top navbar height */
+    overflow: hidden;
+}
+
+/* Responsive sidebar */
+.sidebar {
+    width: 250px;
+    background-color: #F6F7F9; /* Light background color */
+    padding: 20px;
+    border-right: 1px solid #dee2e6; /* Subtle separator */
+    position: sticky;
+    top: 0;
+    bottom: 0;
+    overflow-y: auto; /* Sidebar scrolls independently if content overflows */
+    transition: all 0.3s ease-in-out; /* Smooth transition for showing/hiding */
+}
+
+.sidebar-logo-container {
+    text-align: left; /* Align the logo to the left */
+    margin-bottom: 20px; /* Add spacing below the logo */
+    padding-left: 10px; /* Add padding to separate it from the edge */
+}
+
+.logo {
+    height: 64px; /* Size of the logo */
+    width: 64px; /* Size of the logo */
+    border-radius: 50%; /* Ensure the logo remains circular */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none; /* Sidebar hidden by default on mobile */
+    }
+    .sidebar.show {
+        display: block; /* Show sidebar when toggled */
+    }
+    .content {
+        flex-grow: 1;
+    }
+}
+
+/* Sidebar menu category styling */
+.menu-category {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #223762; /* Updated to the new blue color */
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.nav-link {
+    font-size: 1rem;
+    color: #495057; /* Dark gray text */
+    padding: 10px 15px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+    background-color: #e9ecef; /* Light hover effect */
+}
+
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+    background-color: #223762; /* Updated to the new blue color */
+    color: white !important; /* White text for active links */
+}
+
+/* Content area styling */
+.content {
+    flex-grow: 1; /* Takes up the remaining width */
+    overflow-y: auto; /* Makes the content scrollable */
+    padding: 20px;
+    background-color: #ffffff; /* White background for contrast */
+}
+

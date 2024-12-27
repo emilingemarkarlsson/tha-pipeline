@@ -167,3 +167,4 @@
 
 ### 6.3 Förbered för Docker och produktion
 - När projektet växer, bygg en Dockerfile för enkel distribution.
+# tha-pipeline

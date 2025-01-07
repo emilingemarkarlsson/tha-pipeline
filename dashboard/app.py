@@ -1,19 +1,27 @@
 import sys
 import os
+from pathlib import Path
 import warnings
+
 warnings.filterwarnings("ignore", category=UserWarning, module="dash_auth")
 
 # Add the root directory (tha-pipeline) to the Python module search path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+root_dir = Path(__file__).resolve().parent.parent  # Parent directory of 'dashboard'
+sys.path.append(str(root_dir))  # Add 'tha-pipeline' to sys.path
 
 import dash
 from dash import dcc, html, Input, Output
 import dash_bootstrap_components as dbc
-from dashboard.auth import add_authentication  # Import the authentication utility
-from dashboard.db_utils import get_connection  # Import the database connection utility
+from dashboard.auth import add_authentication  # Authentication utility
+from dashboard.utils.db_utils import get_connection  # Database connection utility
 
-# Import page layouts
-from pages.organization_stats import layout as organization_stats_layout
+# Import layouts for each page
+from dashboard.pages.team_keystats import layout as team_keystats_layout
+from dashboard.pages.player_keystats import layout as player_keystats_layout
+from dashboard.pages.team_analytics import layout as team_trend_layout
+from dashboard.pages.player_analytics import layout as player_trend_layout
+from dashboard.pages.predictions_ai import layout as predictions_ai_layout
+from dashboard.pages.feedback import layout as feedback_layout  # Feedback page layout
 
 # Initialize Dash app
 app = dash.Dash(
@@ -28,31 +36,23 @@ add_authentication(app)
 
 # Sidebar with Links
 sidebar = html.Div(
-    id="sidebar",  # Add ID for callback targeting
+    id="sidebar",
     children=[
-        html.Div(
-            html.Img(
-                src="/assets/img/SonderjyskE_logo.svg.png",
-                className="logo"
-            ),
-            className="sidebar-logo-container"
-        ),
-        html.H5("Key Stats", className="menu-category"),  # Category Header
+        html.H5("Key Stats", className="menu-category"),
         dbc.Nav(
             [
-                dbc.NavLink("Organization Stats", href="/organization-stats", active="exact"),
-                dbc.NavLink("Team Stats", href="/team-stats", active="exact"),
-                dbc.NavLink("Player Stats", href="/player-stats", active="exact"),
+                dbc.NavLink("Team Key Stats", href="/team-keystats", active="exact"),
+                dbc.NavLink("Player Key Stats", href="/player-keystats", active="exact"),
             ],
             vertical=True,
             pills=True,
         ),
         html.Hr(),
 
-        html.H5("Trends", className="menu-category"),  # Category Header
+        html.H5("Trend Analytics", className="menu-category"),
         dbc.Nav(
             [
-                dbc.NavLink("Season Trends", href="/season-trends", active="exact"),
+                dbc.NavLink("Team Trends", href="/team-trends", active="exact"),
                 dbc.NavLink("Player Trends", href="/player-trends", active="exact"),
             ],
             vertical=True,
@@ -60,34 +60,74 @@ sidebar = html.Div(
         ),
         html.Hr(),
 
-        html.H5("Comparisons", className="menu-category"),  # Category Header
+        html.H5("AI Prediction", className="menu-category"),
         dbc.Nav(
             [
-                dbc.NavLink("Team Comparisons", href="/team-comparisons", active="exact"),
-                dbc.NavLink("Player Comparisons", href="/player-comparisons", active="exact"),
+                html.Div([
+                    dbc.NavLink("Predictions", href="/predictions-ai", active="exact"),
+                    html.Span(
+                        "BETA",
+                        style={
+                            "background-color": "#ffd700",
+                            "color": "#000",
+                            "padding": "2px 6px",
+                            "border-radius": "4px",
+                            "font-size": "10px",
+                            "margin-left": "8px",
+                            "font-weight": "bold"
+                        }
+                    )
+                ], style={"display": "flex", "align-items": "center"}),
             ],
             vertical=True,
             pills=True,
         ),
+
+        # Add Feedback Text Link at the bottom
+        html.Div(
+            dbc.NavLink(
+                "Feedback",
+                href="/feedback",
+                active="exact",
+                className="feedback-link"
+            ),
+            style={"margin-top": "auto"}  # Push Feedback link to the bottom of the sidebar
+        ),
     ],
     className="sidebar",
-)
-
-# Sidebar Toggle Button (Visible on Mobile)
-sidebar_toggle = dbc.Button(
-    "☰", id="sidebar-toggle", outline=True, color="primary", className="d-md-none"
+    style={
+        "position": "relative",
+        "height": "100%",
+        "display": "flex",
+        "flex-direction": "column"  # Ensures the sidebar uses all vertical space
+    },
 )
 
 # Top Navbar
 top_navbar = dbc.Navbar(
     dbc.Container(
         [
-            sidebar_toggle,
-            html.Div("Version 0.1", className="navbar-title"),
+            html.Div(
+                [
+                    html.Img(
+                        src="/assets/img/SonderjyskE_logo.svg.png",
+                        style={"height": "30px", "margin-right": "10px"}
+                    ),
+                    html.Span(
+                        "Sonderjyske",
+                        style={
+                            "font-weight": "bold", 
+                            "font-size": "18px", 
+                            "color": "#343a40"
+                        }
+                    ),
+                ],
+                style={"display": "flex", "align-items": "center"}
+            ),
         ],
         fluid=True,
     ),
-    style={"background-color": "#F6F7F9"},  # Light background color
+    style={"background-color": "#F6F7F9", "padding": "10px 15px"},
     dark=False,
     sticky="top",
     className="top-navbar",
@@ -105,34 +145,38 @@ app.layout = html.Div(
     ]
 )
 
-# Callback to toggle the sidebar on mobile
-@app.callback(
-    Output("sidebar", "style"),  # Toggles sidebar visibility
-    [Input("sidebar-toggle", "n_clicks")],
-    prevent_initial_call=True
-)
-def toggle_sidebar(n_clicks):
-    if n_clicks and n_clicks % 2 == 1:  # Show sidebar on odd clicks
-        return {"display": "block"}  # Show the sidebar
-    else:  # Hide sidebar on even clicks
-        return {"display": "none"}  # Hide the sidebar
-
 # Callback for dynamic page rendering
 @app.callback(
     Output("page-content", "children"),
     [Input("url", "pathname")]
 )
 def display_page(pathname):
-    # Connect to DuckDB for dynamic data fetching
     conn = get_connection()
+    
+    # Define routes with their corresponding layouts
+    routes = {
+        "/": team_keystats_layout(conn),  # Default to Team Key Stats
+        "/team-keystats": team_keystats_layout(conn),
+        "/player-keystats": player_keystats_layout(conn),
+        "/team-trends": team_trend_layout(conn),
+        "/player-trends": player_trend_layout(conn),
+        "/predictions-ai": predictions_ai_layout(conn),
+        "/feedback": feedback_layout(conn),  # Feedback page route
+    }
+    
+    # Return the layout for the current route or default to team key stats
+    return routes.get(pathname, team_keystats_layout(conn))
 
-    if pathname == "/organization-stats":
-        # Pass the connection object to the organization_stats layout
-        return organization_stats_layout(conn)
-    else:
-        return html.H1("Welcome to the Hockey Analytics Dashboard!", className="content-title")
+# Add URL redirect callback
+@app.callback(
+    Output("url", "pathname"),
+    Input("url", "pathname")
+)
+def redirect_to_default(pathname):
+    if not pathname or pathname == "/":
+        return "/team-keystats"  # Default to Team Key Stats
+    return pathname
 
 # Run the server
 if __name__ == "__main__":
-    # Ensure the app listens on all network interfaces and the correct port for Docker
     app.run_server(host="0.0.0.0", port=8050, debug=True)

@@ -13,7 +13,23 @@ def extract_year_from_filename(filename):
     return int(match.group(1)) if match else None
 
 
-def load_and_combine_excel_files_with_year(directory, sheet_name):
+def convert_time_on_ice_to_seconds(data, column_name):
+    """
+    Convert a 'mm:ss' formatted time column to total seconds.
+    """
+    if column_name in data.columns:
+        try:
+            # Convert 'mm:ss' to total seconds
+            data[column_name] = data[column_name].apply(
+                lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]) if pd.notnull(x) else None
+            )
+            print(f"Converted '{column_name}' to total seconds")
+        except Exception as e:
+            print(f"Error converting '{column_name}' to seconds: {e}")
+    return data
+
+
+def load_and_combine_excel_files_with_year(directory, sheet_name=None):
     """
     Dynamically load and combine all Excel files in a directory, adding a filename and year column.
     """
@@ -25,9 +41,23 @@ def load_and_combine_excel_files_with_year(directory, sheet_name):
                 try:
                     year = extract_year_from_filename(file)
                     print(f"Processing file: {file_path}, Year: {year}")
-                    data = pd.read_excel(file_path, sheet_name=sheet_name)
+                    
+                    # Load Excel file
+                    excel_file = pd.ExcelFile(file_path)
+                    if sheet_name and sheet_name in excel_file.sheet_names:
+                        data = pd.read_excel(file_path, sheet_name=sheet_name)
+                    else:
+                        print(f"Sheet '{sheet_name}' not found in {file}. Using the first available sheet.")
+                        data = pd.read_excel(file_path, sheet_name=0)
+                    
+                    # Add metadata
                     data['filename'] = file
                     data['year'] = year
+                    
+                    # Convert 'Time on ice' to total seconds for 'dk_metal_players'
+                    if sheet_name == "Box score":
+                        data = convert_time_on_ice_to_seconds(data, 'Time on ice')
+                    
                     combined_data.append(data)
                 except Exception as e:
                     print(f"Error processing {file_path}: {e}")
@@ -96,19 +126,14 @@ def load_and_save_csv_to_duckdb(directory, db_path, table_name, column_type_mapp
             print(f"No CSV files found in directory: {directory}")
             return
 
-        for idx, csv_file in enumerate(csv_files):
+        for csv_file in csv_files:
             print(f"Processing CSV file: {csv_file}")
             try:
-                # Explicitly handle delimiter and missing headers
-                data = pd.read_csv(csv_file, delimiter=";", header=0, engine="python")
-
-                print(f"Data from CSV file ({csv_file}):")
-                print(data.head())  # Debugging: Show the first rows
-                print(f"Number of rows: {len(data)}")
-
-                if data.empty:
-                    print(f"CSV file {csv_file} is empty. Skipping.")
-                    continue
+                # Test both delimiters ';' and ',' dynamically
+                try:
+                    data = pd.read_csv(csv_file, delimiter=";", header=0, engine="python")
+                except Exception:
+                    data = pd.read_csv(csv_file, delimiter=",", header=0, engine="python")
 
                 if column_type_mapping:
                     data = enforce_column_types(data, column_type_mapping)
@@ -117,11 +142,6 @@ def load_and_save_csv_to_duckdb(directory, db_path, table_name, column_type_mapp
 
             except Exception as e:
                 print(f"Error processing CSV file {csv_file}: {e}")
-
-        print(f"CSV files from '{directory}' have been saved to DuckDB table '{table_name}'.")
-
-    except Exception as e:
-        print(f"An error occurred while processing CSV files: {e}")
 
     finally:
         conn.close()
@@ -152,6 +172,22 @@ if __name__ == "__main__":
             "year": int,
             "date": "DATE",
             "league": str
+        },
+        "dk_metal_players": {
+            "player_name": str,
+            "team": str,
+            "goals": int,
+            "assists": int,
+            "year": int,
+            "Time on ice": int,  # Converted to total seconds
+            "filename": str
+        },
+        "dk_metal_players_ep": {
+            "id": int,
+            "player_name": str,
+            "team": str,
+            "points": int,
+            "year": int
         }
     }
 
@@ -163,6 +199,10 @@ if __name__ == "__main__":
         },
         "dk_metal_games": {
             "directory": "data/leagues/dk/dk_metal_games",
+            "sheet_name": "Box score"
+        },
+        "dk_metal_players": {
+            "directory": "data/leagues/dk/dk_metal_players",
             "sheet_name": "Box score"
         },
     }
@@ -181,6 +221,9 @@ if __name__ == "__main__":
     csv_config = {
         "dk_metal_league_ep": {
             "directory": "data/leagues/dk/dk_metal_league_ep"
+        },
+        "dk_metal_players_ep": {
+            "directory": "data/leagues/dk/dk_metal_players_ep"
         },
     }
 

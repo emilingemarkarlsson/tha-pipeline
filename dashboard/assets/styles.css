@@ -1,34 +1,185 @@
+/* Base font sizes */
+:root {
+    --text-xs: 0.75rem;    /* 12px */
+    --text-sm: 0.875rem;   /* 14px */
+    --text-base: 1rem;     /* 16px */
+    --text-lg: 1.125rem;   /* 18px */
+    --text-xl: 1.25rem;    /* 20px */
+}
+
 /* General layout */
 .main-layout {
     display: flex;
     flex-direction: row; /* Sidebar on the left, content on the right */
     height: calc(100vh - 50px); /* Subtract top navbar height */
     overflow: hidden;
+    position: relative;
 }
 
-/* Responsive sidebar */
+/* Sidebar adjustments */
 .sidebar {
-    width: 250px;
+    flex-shrink: 0; /* Prevent the sidebar from shrinking */
+    width: 250px; /* Fixed width */
     background-color: #F6F7F9; /* Light background color */
-    padding: 20px;
+    padding: 20px 20px 70px 20px; /* Added bottom padding for bar */
     border-right: 1px solid #dee2e6; /* Subtle separator */
-    position: sticky;
-    top: 0;
+    position: sticky; /* Sticks sidebar to the viewport */
+    top: 50px; /* Adjust for the navbar height */
     bottom: 0;
     overflow-y: auto; /* Sidebar scrolls independently if content overflows */
+    z-index: 10; /* Ensure it stays above the content */
     transition: all 0.3s ease-in-out; /* Smooth transition for showing/hiding */
 }
 
+/* Add bottom bar to sidebar */
+.sidebar::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 250px;
+    height: 50px;
+    background-color: #223762;
+    z-index: 11;
+}
+
+/* Sidebar logo */
 .sidebar-logo-container {
     text-align: left; /* Align the logo to the left */
     margin-bottom: 20px; /* Add spacing below the logo */
     padding-left: 10px; /* Add padding to separate it from the edge */
 }
 
+/* Logo sizing */
 .logo {
-    height: 64px; /* Size of the logo */
-    width: 64px; /* Size of the logo */
+    height: 4rem;          /* 64px */
+    width: 4rem;          /* 64px */
     border-radius: 50%; /* Ensure the logo remains circular */
+}
+
+/* Sidebar menu category styling */
+.menu-category {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: #495057;
+    margin-top: 1.25rem;
+    margin-bottom: 0.625rem;
+    padding-left: 0.625rem;
+}
+
+.nav-link {
+    font-size: var(--text-base);
+    color: #495057; /* Dark gray text */
+    padding: 0.625rem 0.9375rem;
+    border-radius: 0.3125rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease-in-out;
+    text-decoration: none; /* Remove underline */
+}
+
+.nav-link:hover {
+    color: #223762; /* Text color changes to blue on hover */
+    text-decoration: none; /* Keep underline removed */
+}
+
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+    background-color: #223762; /* Updated to the new blue color */
+    color: white !important; /* White text for active links */
+}
+
+/* Feedback link styling */
+.feedback-link {
+    font-size: 14px;
+    color: #6c757d;
+    text-align: left;
+    text-decoration: none;
+    padding: 8px 16px;
+    margin-top: auto;
+    transition: color 0.2s ease-in-out;
+}
+
+.feedback-link:hover {
+    color: #223762;
+    text-decoration: none;
+    background-color: rgba(34, 55, 98, 0.1);
+    border-radius: 4px;
+}
+
+/* Content area styling */
+.content {
+    flex-grow: 1; /* Allow content to grow without affecting the sidebar */
+    overflow-y: auto; /* Makes the content scrollable */
+    padding: 60px 20px 20px 20px; /* Adjust padding to add more space to the top */
+    margin-left: 5px; /* Align content with the sidebar */
+    background-color: #ffffff; /* White background for contrast */
+}
+
+/* Prevent horizontal overflow */
+body {
+    overflow-x: hidden;
+}
+
+/* KPI Table Rows */
+.kpi-table-row {
+    margin-bottom: 10px;
+}
+
+.kpi-table-row .col {
+    text-align: center;
+    font-weight: bold;
+}
+
+/* Trend Graphs Styling */
+.trend-graph {
+    margin: 10px 0;
+}
+
+.trend-graph .plotly-graph {
+    height: 300px;
+}
+
+/* Navbar styling */
+.navbar {
+    background-color: #223762; /* Dark blue background */
+    color: white; /* White text */
+    padding: 10px 15px; /* Padding for proper spacing */
+    z-index: 1050; /* Ensure navbar stays above other elements */
+    position: fixed; /* Navbar stays fixed at the top */
+    width: 100%; /* Full-width navbar */
+    top: 0; /* Stick to the top */
+    left: 0;
+    height: 50px; /* Ensure consistent height for the navbar */
+}
+
+/* Navbar brand logo */
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    color: white;
+    text-decoration: none;
+    font-size: 1.25rem;
+}
+
+.navbar-brand img {
+    height: 30px;
+    margin-right: 10px; /* Space between logo and text */
+}
+
+/* Footer link styling */
+.footer-link {
+    font-size: 14px;
+    color: #6c757d; /* Subtle gray */
+    text-align: center;
+    text-decoration: none;
+    margin-top: 20px;
+    display: block;
+    padding: 10px 0;
+}
+
+.footer-link:hover {
+    color: #223762;
+    text-decoration: none;
 }
 
 /* Responsive adjustments */
@@ -40,43 +191,7 @@
         display: block; /* Show sidebar when toggled */
     }
     .content {
-        flex-grow: 1;
+        margin-left: 0; /* Remove margin for mobile */
+        padding: 20px; /* Maintain padding for smaller screens */
     }
 }
-
-/* Sidebar menu category styling */
-.menu-category {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: #223762; /* Updated to the new blue color */
-    margin-top: 15px;
-    margin-bottom: 5px;
-}
-
-.nav-link {
-    font-size: 1rem;
-    color: #495057; /* Dark gray text */
-    padding: 10px 15px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    transition: all 0.2s ease-in-out;
-}
-
-.nav-link:hover {
-    background-color: #e9ecef; /* Light hover effect */
-}
-
-.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
-    background-color: #223762; /* Updated to the new blue color */
-    color: white !important; /* White text for active links */
-}
-
-/* Content area styling */
-.content {
-    flex-grow: 1; /* Takes up the remaining width */
-    overflow-y: auto; /* Makes the content scrollable */
-    padding: 20px;
-    background-color: #ffffff; /* White background for contrast */
-}
-
